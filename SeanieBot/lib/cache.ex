@@ -1,25 +1,31 @@
 defmodule Seanies.Cache do
+  alias Seanies.Rarity
+
   @table_name :seanies_cache
+
+  def get_all, do: :ets.tab2list(@table_name)
 
   def setup_table do
     :ets.new(@table_name, [:named_table, :public, :set])
 
     directory = metaplex_mints()
-    rarities = get_rarities()
-    populate_cache(directory, rarities)
+    populate_cache(directory)
   end
 
   def metaplex_mints, do: Application.get_env(:seanies, :metaplex_mints)
 
-  def populate_cache(directory, rarities) do
+  def populate_cache(directory) do
     directory
     |> File.ls!()
     |> Enum.map(fn f ->
       directory
       |> Path.join(f)
-      |> get_metadata(rarities)
+      |> get_metadata()
       |> then(fn d -> :ets.insert(@table_name, d) end)
     end)
+
+    Rarity.get_all_rarities()
+    |> Enum.map(fn {name, rarity} -> :ets.update_element(@table_name, name, {4, rarity}) end)
   end
 
   def get_rarities do
@@ -31,14 +37,15 @@ defmodule Seanies.Cache do
     |> Enum.into(%{})
   end
 
-  def get_metadata(filename, rarities) do
+  def get_metadata(filename) do
     json =
       filename
       |> File.read!()
       |> Jason.decode!()
 
     mint = filename |> Path.basename() |> String.replace(".json", "")
-    {json["name"], json, mint, rarities[mint]}
+    name = json["name"]
+    {name, json, mint, nil}
   end
 
   def get_by_name(name) do
