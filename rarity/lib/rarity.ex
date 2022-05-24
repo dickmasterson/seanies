@@ -1,5 +1,9 @@
-defmodule Seanies.Rarity do
-  alias Seanies.Cache
+defmodule Rarity do
+  @moduledoc """
+  Rarity algorithm logic
+  """
+
+  alias Rarity.Cache
 
   @trait_types ~w(Body Extras Eyes Face Head Items Mouth Sean)
   @num_seanies 5_000
